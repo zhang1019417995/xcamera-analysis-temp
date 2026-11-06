@@ -1,0 +1,35 @@
+
+name: Check XCamera Device ID APIs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download and inspect XCamera
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download V1 \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "XCamera.zip" \
+            --dir /tmp
+
+          mkdir -p /tmp/xcamera
+          unzip -q /tmp/XCamera.zip -d /tmp/xcamera
+
+          echo "===== FILES ====="
+          find /tmp/xcamera -type f -printf '%f %s bytes\n' | head -30
+
+          echo "===== DEVICE IDENTIFIER API HINTS ====="
+          find /tmp/xcamera -type f -exec strings -a {} + \
+            | grep -Ei 'identifierForVendor|ASIdentifierManager|advertisingIdentifier|SecItemCopyMatching|SecItemAdd|SecItemUpdate|SecItemDelete|kSecAttr|keychain|IDFV|IDFA' \
+            | sort -u \
+            | head -100 || true
+
+          echo "===== ANALYSIS COMPLETE ====="
